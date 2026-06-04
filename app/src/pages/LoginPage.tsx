@@ -1,33 +1,40 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 
-// Usuarios "de mentira" para el login simulado.
-// En la Fase 4 esto lo reemplaza un backend real que emite JWT firmados.
-const USERS = [
-  { username: 'admin', password: 'admin123', role: 'admin' },
-  { username: 'viewer', password: 'viewer123', role: 'viewer' },
-]
+const API_URL = 'http://localhost:3001'
 
 function LoginPage() {
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit() {
-    const user = USERS.find(
-      (u) => u.username === username && u.password === password,
-    )
+  async function handleSubmit() {
+    setError('')
+    setLoading(true)
 
-    if (!user) {
-      setError('Usuario o contraseña incorrectos')
-      return
+    try {
+      const res = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+
+      if (!res.ok) {
+        setError('Usuario o contraseña incorrectos')
+        return
+      }
+
+      const data = await res.json()
+      localStorage.setItem('fleetsense_token', data.token)
+      localStorage.setItem('fleetsense_role', data.role)
+      navigate({ to: '/dashboard' })
+    } catch {
+      setError('No se pudo conectar con el servidor')
+    } finally {
+      setLoading(false)
     }
-
-    // "Token" simulado por ahora. En Fase 4 será un JWT real del backend.
-    localStorage.setItem('fleetsense_token', `mock-token-${user.role}`)
-    localStorage.setItem('fleetsense_role', user.role)
-    navigate({ to: '/dashboard' })
   }
 
   return (
@@ -58,8 +65,9 @@ function LoginPage() {
           data-testid="login-submit"
           type="button"
           onClick={handleSubmit}
+          disabled={loading}
         >
-          Ingresar
+          {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
 
         {error && (
