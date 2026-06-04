@@ -28,13 +28,13 @@ export default defineConfig({
       command: 'npm run dev',
       cwd: '../app',
       url: 'http://localhost:5173',
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
     },
     {
       command: 'npm run dev',
       cwd: '../api',
       url: 'http://localhost:3001/api/health',
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
     },
   ],
 })
