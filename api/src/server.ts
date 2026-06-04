@@ -11,6 +11,10 @@ const JWT_SECRET = 'fleetsense-dev-secret-change-me'
 
 app.use(cors())
 app.use(express.json())
+// --- GET /api/health : chequeo de salud (público, sin token) ---
+app.get('/api/health', (_req: Request, res: Response) => {
+  return res.status(200).json({ status: 'ok' })
+})
 
 // "Base de datos" de usuarios simulada.
 const USERS = [
