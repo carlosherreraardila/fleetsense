@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
+import TelemetryTable from '../components/TelemetryTable'
 
 function DashboardPage() {
   const navigate = useNavigate()
@@ -22,7 +23,7 @@ function DashboardPage() {
         </button>
       </header>
 
-      <p>Aquí irá la tabla de telemetría.</p>
+      <TelemetryTable />
     </div>
   )
 }

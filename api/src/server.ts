@@ -90,7 +90,33 @@ app.get('/api/telemetry', authenticateToken, (req: Request, res: Response) => {
     pageSize,
   })
 })
+// --- GET /api/telemetry/export : devuelve TODO el dataset como CSV (protegido) ---
+app.get('/api/telemetry/export', authenticateToken, (_req: Request, res: Response) => {
+  const header = ['id', 'deviceId', 'deviceName', 'timestamp', 'temperature', 'humidity', 'status']
 
+  const escape = (value: string | number) => {
+    const s = String(value)
+    // Si el valor tiene comas, comillas o saltos de línea, se envuelve en comillas.
+    if (/[",\n]/.test(s)) {
+      return `"${s.replace(/"/g, '""')}"`
+    }
+    return s
+  }
+
+  const lines = [header.join(',')]
+  for (const r of telemetryData) {
+    lines.push(
+      [r.id, r.deviceId, r.deviceName, r.timestamp, r.temperature, r.humidity, r.status]
+        .map(escape)
+        .join(','),
+    )
+  }
+  const csv = lines.join('\n')
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', 'attachment; filename="telemetry.csv"')
+  return res.status(200).send(csv)
+})
 app.listen(PORT, () => {
   console.log(`FleetSense API listening on http://localhost:${PORT}`)
 })
