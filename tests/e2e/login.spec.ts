@@ -1,19 +1,55 @@
 import { test, expect } from '@playwright/test'
+import { LoginPage } from '../pages/LoginPage'
+import { DashboardPage } from '../pages/DashboardPage'
 
-test('admin puede iniciar sesión y ver el dashboard', async ({ page }) => {
-  // 1. Ir a la página de login
-  await page.goto('/login')
+test.describe('Autenticación de FleetSense', () => {
+  test('admin inicia sesión y ve el dashboard con su rol', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    const dashboard = new DashboardPage(page)
 
-  // 2. Llenar credenciales usando los data-testid
-  await page.getByTestId('login-username').fill('admin')
-  await page.getByTestId('login-password').fill('admin123')
+    await loginPage.goto()
+    await loginPage.login('admin', 'admin123')
 
-  // 3. Hacer clic en Ingresar
-  await page.getByTestId('login-submit').click()
+    await expect(page).toHaveURL(/.*\/dashboard/)
+    await expect(dashboard.role).toHaveText('admin')
+  })
 
-  // 4. Verificar que llegamos al dashboard
-  await expect(page).toHaveURL(/.*\/dashboard/)
+  test('viewer inicia sesión y ve el dashboard con su rol', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    const dashboard = new DashboardPage(page)
 
-  // 5. Verificar que el rol mostrado es "admin"
-  await expect(page.getByTestId('user-role')).toHaveText('admin')
+    await loginPage.goto()
+    await loginPage.login('viewer', 'viewer123')
+
+    await expect(page).toHaveURL(/.*\/dashboard/)
+    await expect(dashboard.role).toHaveText('viewer')
+  })
+
+  test('credenciales inválidas muestran error y no permiten entrar', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+
+    await loginPage.goto()
+    await loginPage.login('admin', 'clave-mala')
+
+    await expect(loginPage.error).toBeVisible()
+    await expect(loginPage.error).toHaveText('Usuario o contraseña incorrectos')
+    await expect(page).toHaveURL(/.*\/login/)
+  })
+
+  test('una ruta protegida redirige al login sin sesión', async ({ page }) => {
+    await page.goto('/dashboard')
+    await expect(page).toHaveURL(/.*\/login/)
+  })
+
+  test('el usuario puede cerrar sesión', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    const dashboard = new DashboardPage(page)
+
+    await loginPage.goto()
+    await loginPage.login('admin', 'admin123')
+    await expect(dashboard.role).toHaveText('admin')
+
+    await dashboard.logout()
+    await expect(page).toHaveURL(/.*\/login/)
+  })
 })
